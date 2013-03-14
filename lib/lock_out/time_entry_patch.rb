@@ -11,12 +11,15 @@ module LockOut
     module InstanceMethods
 
       def check_date_for_lock_out
-        require 'debugger'; debugger
-        current_date = Time.now
-        entry_date = self.spent_on
-        if current_date.month > entry_date.month
-          errors.add :spent_on, "cannot be a previous month as that month is locked."
+        unless self.spent_on.nil?
+          if invalid_lock_out_date?
+            errors.add :spent_on, "cannot be a previous month as that month is locked."
+          end
         end
+      end
+
+      def invalid_lock_out_date?
+        self.spent_on <= (Time.now - 1.month).end_of_month.to_date
       end
 
     end
