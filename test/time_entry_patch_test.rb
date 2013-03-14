@@ -23,6 +23,16 @@ class TimeEntryPatchTest < ActionController::TestCase
     assert_equal "cannot be a previous month as that month is locked.", @time_entry.errors[:spent_on].first
   end
 
+  def test_spent_on_is_past_month_is_unlocked
+    lock_out_date = LockOutDate.create(
+      :month => (Time.now - 1.month).month,
+      :year => (Time.now - 1.month).year,
+      :locked => false
+    )
+    @time_entry.spent_on = Time.now - 1.month
+    assert_equal true, @time_entry.save
+  end
+
   def test_spent_on_is_last_day_of_month
     @time_entry.spent_on = (Time.now - 1.month).end_of_month
     assert_equal false, @time_entry.save

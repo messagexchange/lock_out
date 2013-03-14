@@ -19,7 +19,16 @@ module LockOut
       end
 
       def invalid_lock_out_date?
-        self.spent_on <= (Time.now - 1.month).end_of_month.to_date
+        self.spent_on <= (Time.now - 1.month).end_of_month.to_date &&
+          is_locked?
+      end
+
+      def is_locked?
+        lock_out_date = LockOutDate.
+          where(:month => spent_on.month, :year => spent_on.year).
+          first
+        return true if lock_out_date.nil?
+        lock_out_date.locked
       end
 
     end
