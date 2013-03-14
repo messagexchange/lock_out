@@ -1,7 +1,6 @@
 require File.dirname(File.expand_path(__FILE__)) + '/./test_helper'
 
 class TimeEntryPatchTest < ActionController::TestCase
-  #self.fixture_path = File.dirname(File.expand_path(__FILE__)) + "/../fixtures/"
   fixtures :users, :projects, :issues, :enumerations
 
   def setup
@@ -19,6 +18,13 @@ class TimeEntryPatchTest < ActionController::TestCase
 
   def test_spent_on_is_last_month
     @time_entry.spent_on = Time.now - 1.month
+    assert_equal false, @time_entry.save
+    assert_equal 1, @time_entry.errors[:spent_on].count
+    assert_equal "cannot be a previous month as that month is locked.", @time_entry.errors[:spent_on].first
+  end
+
+  def test_spent_on_is_last_day_of_month
+    @time_entry.spent_on = (Time.now - 1.month).end_of_month
     assert_equal false, @time_entry.save
     assert_equal 1, @time_entry.errors[:spent_on].count
     assert_equal "cannot be a previous month as that month is locked.", @time_entry.errors[:spent_on].first
