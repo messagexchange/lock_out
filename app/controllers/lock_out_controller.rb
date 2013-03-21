@@ -1,17 +1,18 @@
 class LockOutController < ApplicationController
   unloadable
+  before_filter :authorize_global
   before_filter :find_or_create_date, :only => [:lock, :unlock]
 
   def index
     now = Time.now
     @dates = []
 
-    # generate last 6 months
-    6.times do |i|
+    # generate last 7 months
+    7.times do |i|
       now = now - 1.month
       @dates << LockOutDate.
         where(:month => now.month).
-        where(:year => now.year).
+        where(:year  => now.year).
         first_or_create
     end
 
