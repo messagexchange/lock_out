@@ -1,5 +1,22 @@
 require File.dirname(File.expand_path(__FILE__)) + '/./test_helper'
 
+# reopen time class to stub out what I need for testing, as the code
+# is based on the current time - so I can now set the 'current time'
+# as the code sees it.
+class Time
+  def self.current=(value)
+    @current = value
+  end
+
+  class << self
+    alias :old_now :now
+  end
+
+  def self.now
+    @current || Time.old_now
+  end
+end
+
 class TimeEntryPatchTest < ActionController::TestCase
   fixtures :users, :projects, :issues, :enumerations
 
@@ -14,6 +31,34 @@ class TimeEntryPatchTest < ActionController::TestCase
       :project => @issue.project,
       :activity => @activity
     )
+    Time.current = nil
+    Setting.plugin_lock_out[:lock_out_date] = 1
+  end
+
+  def teardown
+    Time.current = nil
+    Setting.plugin_lock_out[:lock_out_date] = 1
+  end
+
+  def test_entered_first_day_of_month_for_last_month
+    Time.current = Time.now.beginning_of_month
+    @time_entry.spent_on = Time.now - 5.days
+    assert_equal true, @time_entry.save
+  end
+
+  def test_entered_second_day_of_month_for_last_month
+    Time.current = Time.now.beginning_of_month + 1.day
+    @time_entry.spent_on = Time.now - 6.days
+    assert_equal false, @time_entry.save
+    assert_equal 1, @time_entry.errors[:spent_on].count
+    assert_equal "cannot be a previous month as that month is locked.", @time_entry.errors[:spent_on].first
+  end
+
+  def test_entered_third_day_of_month_with_setting_allowing_it
+    Setting.plugin_lock_out[:lock_out_date] = 3
+    Time.current = Time.now.beginning_of_month + 2.days
+    @time_entry.spent_on = Time.now - 8.days
+    assert_equal true, @time_entry.save
   end
 
   def test_spent_on_is_last_month

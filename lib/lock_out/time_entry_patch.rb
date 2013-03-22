@@ -12,18 +12,21 @@ module LockOut
 
       def check_date_for_lock_out
         unless self.spent_on.nil?
-          if invalid_lock_out_date?
+          unless spent_on_valid?
             errors.add :spent_on, "cannot be a previous month as that month is locked."
           end
         end
       end
 
-      def invalid_lock_out_date?
-        self.spent_on <= (Time.now - 1.month).end_of_month.to_date &&
-          is_locked?
+      def spent_on_valid?
+        self.spent_on >= lock_out_date || Time.now.to_date < lock_out_date || !month_locked?
       end
 
-      def is_locked?
+      def lock_out_date
+        (Time.now.beginning_of_month + (Setting.plugin_lock_out[:lock_out_date].to_i).days).to_date
+      end
+
+      def month_locked?
         lock_out_date = LockOutDate.
           where(:month => spent_on.month, :year => spent_on.year).
           first
