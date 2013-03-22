@@ -12,7 +12,8 @@ Redmine::Plugin.register :lock_out do
   permission :alter_lock_dates, { :lock_out => [:lock, :unlock] }
 
   # settings for what day of the month the lockout occurs
-  settings :default => { 'lock_out_day' => 1 }
+  settings :partial => 'lock_out_settings',
+           :default => { 'lock_out_day' => 1 }
 
   menu :top_menu, :lock_out, { :controller => 'lock_out', :action => 'index' }, :caption => "Lock out dates", :if => Proc.new { User.current.allowed_to?({ :controller => 'lock_out', :action => 'index' }, nil, :global => true) }
 end
