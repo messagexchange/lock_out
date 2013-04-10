@@ -46,6 +46,29 @@ class TimeEntryPatchTest < ActionController::TestCase
     assert_equal true, @time_entry.save
   end
 
+  def test_entered_first_day_of_month_when_disallowed
+    Setting.plugin_lock_out[:lock_out_date] = 0
+    Time.current = Time.now.beginning_of_month
+    @time_entry.spent_on = Time.now - 5.days
+    assert_equal false, @time_entry.save
+    assert_equal 1, @time_entry.errors[:spent_on].count
+    assert_equal "cannot be a previous month as that month is locked.", @time_entry.errors[:spent_on].first
+  end
+
+  def test_entered_on_last_day_of_month_as_last_allowed
+    Setting.plugin_lock_out[:lock_out_date] = 0
+    Time.current = Time.now.end_of_month
+    @time_entry.spent_on = Time.now - 5.days
+    assert_equal true, @time_entry.save
+  end
+
+  def test_entered_on_last_day_of_month_for_last_day_of_month
+    Setting.plugin_lock_out[:lock_out_date] = 0
+    Time.current = Time.now.end_of_month
+    @time_entry.spent_on = Time.now
+    assert_equal true, @time_entry.save
+  end
+
   def test_entered_second_day_of_month_for_last_month
     Time.current = Time.now.beginning_of_month + 1.day
     @time_entry.spent_on = Time.now - 6.days
